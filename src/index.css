@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #FFE4EC 0%, #FFD0DD 50%, #FEC8D6 100%);
+  font-family: 'Inter', sans-serif;
+  color: #2C1810;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(#E86F8C 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+input, select, textarea, button {
+  font-family: 'Inter', sans-serif;
+}
+
+input, select, textarea {
+  width: 100%;
+  background: #FFF8FA;
+  border: 1px solid #FFD0DD;
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #2C1810;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #E86F8C;
+  box-shadow: 0 0 0 3px rgba(232,111,140,0.1);
+}
+
+::-webkit-scrollbar { width: 0; }
