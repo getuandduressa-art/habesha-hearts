@@ -153,7 +153,6 @@ export default function Verify({ user, setUser }) {
                       ref={fileRef}
                       type="file"
                       accept="image/*"
-                      capture="user"
                       onChange={handlePhotoVerify}
                       style={{ display: 'none' }}
                     />
