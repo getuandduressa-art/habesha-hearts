@@ -18,20 +18,30 @@ export default function App() {
       tg.ready()
       tg.expand()
     }
+
     const tgUser = tg?.initDataUnsafe?.user
+
     if (tgUser) {
       loginWithTelegram(tgUser)
     } else {
+      // Browser/demo mode — check localStorage
       const saved = localStorage.getItem('habesha_demo_profile')
       if (saved) {
         try {
           const parsed = JSON.parse(saved)
-          setUser(parsed)
+          // Only use saved profile if it has real data
+          if (parsed && parsed.name && parsed.name !== 'Demo User') {
+            setUser(parsed)
+          } else {
+            // Stale/empty demo — start fresh
+            localStorage.removeItem('habesha_demo_profile')
+            setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345, profile_complete: false })
+          }
         } catch {
-          setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
+          setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345, profile_complete: false })
         }
       } else {
-        setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
+        setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345, profile_complete: false })
       }
       setLoading(false)
     }
@@ -46,7 +56,7 @@ export default function App() {
         .single()
 
       if (error || !data) {
-        const { data: newProfile } = await supabase
+        const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert({
             telegram_id: tgUser.id,
@@ -56,34 +66,38 @@ export default function App() {
           })
           .select()
           .single()
+
+        if (insertError) throw insertError
         setUser(newProfile)
       } else {
         setUser(data)
       }
     } catch (e) {
-      console.error(e)
-      setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
+      console.error('Telegram login error:', e)
+      setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345, profile_complete: false })
     }
     setLoading(false)
   }
 
   if (loading) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontSize:48,background:'#FDF6EC'}}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 48, background: '#FDF6EC' }}>
       💛
     </div>
   )
 
-  const profileComplete = user?.profile_complete === true ||
-    (user?.age && user?.region && user?.religion)
+  // A profile is complete only if profile_complete is explicitly true
+  const profileComplete = user?.profile_complete === true
 
   return (
     <Routes>
-      <Route path="/" element={!profileComplete
-        ? <Welcome user={user} setUser={setUser} />
-        : <Navigate to="/browse" />}
+      <Route
+        path="/"
+        element={!profileComplete
+          ? <Welcome user={user} setUser={setUser} />
+          : <Navigate to="/browse" />}
       />
-      <Route path="/browse" element={<Browse user={user} />} />
-      <Route path="/matches" element={<Matches user={user} />} />
+      <Route path="/browse" element={profileComplete ? <Browse user={user} /> : <Navigate to="/" />} />
+      <Route path="/matches" element={profileComplete ? <Matches user={user} /> : <Navigate to="/" />} />
       <Route path="/chat/:matchId" element={<Chat user={user} />} />
       <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
       <Route path="/verify" element={<Verify user={user} setUser={setUser} />} />
