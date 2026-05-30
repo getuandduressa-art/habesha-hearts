@@ -22,11 +22,11 @@ export default function App() {
     if (tgUser) {
       loginWithTelegram(tgUser)
     } else {
-      // Demo mode - check localStorage for saved profile
       const saved = localStorage.getItem('habesha_demo_profile')
       if (saved) {
         try {
-          setUser(JSON.parse(saved))
+          const parsed = JSON.parse(saved)
+          setUser(parsed)
         } catch {
           setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
         }
@@ -46,7 +46,6 @@ export default function App() {
         .single()
 
       if (error || !data) {
-        // Create new profile
         const { data: newProfile } = await supabase
           .from('profiles')
           .insert({
@@ -74,13 +73,15 @@ export default function App() {
     </div>
   )
 
-  // Check if profile is complete
-  const profileComplete = user?.profile_complete === true || 
+  const profileComplete = user?.profile_complete === true ||
     (user?.age && user?.region && user?.religion)
 
   return (
     <Routes>
-      <Route path="/" element={!profileComplete ? <Welcome user={user} setUser={setUser} /> : <Browse user={user} />} />
+      <Route path="/" element={!profileComplete
+        ? <Welcome user={user} setUser={setUser} />
+        : <Navigate to="/browse" />}
+      />
       <Route path="/browse" element={<Browse user={user} />} />
       <Route path="/matches" element={<Matches user={user} />} />
       <Route path="/chat/:matchId" element={<Chat user={user} />} />

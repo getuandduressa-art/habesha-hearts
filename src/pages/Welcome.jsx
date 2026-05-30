@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -7,7 +7,7 @@ const REGIONS = ['Addis Ababa','Oromia','Amhara','Tigray','SNNPR','Harari','Dire
 const INTERESTS = ['🎵 Music','⚽ Sports','💼 Business','🎨 Art','💻 Tech','🕊️ Faith','🍜 Food','✈️ Travel','🏺 Culture','📚 Learning']
 const LOOKING_FOR = ['❤️ Dating','👋 Friendship','💼 Networking','🧠 Advice','🗣️ Just to Talk']
 
-export default function Welcome({ user }) {
+export default function Welcome({ user, setUser }) {
   const [form, setForm] = useState({ name:'', age:'', region:'', religion:'', vibe:'Modern', bio:'' })
   const [interests, setInterests] = useState([])
   const [lookingFor, setLookingFor] = useState([])
@@ -19,7 +19,6 @@ export default function Welcome({ user }) {
   const [error, setError] = useState('')
   const nav = useNavigate()
 
-  // Pre-fill from Telegram user data if available
   useEffect(() => {
     if (user?.name && user.name !== 'Demo User') {
       setForm(p => ({ ...p, name: user.name }))
@@ -45,7 +44,7 @@ export default function Welcome({ user }) {
       return
     }
     if (parseInt(form.age) < 18) {
-      setError('You must be 18 or older / ዕድሜዎ 18 ወይም ከዚያ በላይ መሆን አለበት')
+      setError('You must be 18 or older')
       return
     }
     if (!privacyAgreed) {
@@ -56,13 +55,11 @@ export default function Welcome({ user }) {
     try {
       let photo_url = user?.photo_url || null
 
-      // Upload photo if selected
       if (photoFile && user?.id) {
         const ext = photoFile.name.split('.').pop()
         const path = `${user.id}.${ext}`
         const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(path, photoFile, { upsert: true })
+          .from('avatars').upload(path, photoFile, { upsert: true })
         if (!uploadError) {
           const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
           photo_url = publicUrl
@@ -86,19 +83,20 @@ export default function Welcome({ user }) {
       if (user?.id && user.id !== 'demo-user') {
         // Real Supabase user
         const { error: updateError } = await supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', user.id)
+          .from('profiles').update(updates).eq('id', user.id)
         if (updateError) throw updateError
+        setUser(prev => ({ ...prev, ...updates }))
       } else {
-        // Demo mode - save to localStorage so profile persists
-        localStorage.setItem('habesha_demo_profile', JSON.stringify({ ...user, ...updates }))
+        // Demo mode - save to localStorage
+        const demoProfile = { ...user, ...updates }
+        localStorage.setItem('habesha_demo_profile', JSON.stringify(demoProfile))
+        setUser(demoProfile)
       }
 
       nav('/browse')
     } catch (e) {
       console.error(e)
-      setError('Something went wrong. Please try again.')
+      setError('Something went wrong: ' + e.message)
     }
     setSaving(false)
   }
@@ -130,7 +128,6 @@ export default function Welcome({ user }) {
       </div>
 
       <div style={C.card}>
-        {/* Name & Age */}
         <div style={C.row2}>
           <div>
             <label style={C.label}>Display Name</label>
@@ -142,7 +139,6 @@ export default function Welcome({ user }) {
           </div>
         </div>
 
-        {/* Region & Religion */}
         <div style={C.row2}>
           <div>
             <label style={C.label}>Region</label>
@@ -160,13 +156,11 @@ export default function Welcome({ user }) {
           </div>
         </div>
 
-        {/* Bio */}
         <div style={C.inputWrap}>
           <label style={C.label}>Bio / ስለ እራስዎ</label>
           <textarea value={form.bio} onChange={e=>setForm(p=>({...p,bio:e.target.value}))} placeholder="Tell us about yourself..." rows={3} style={{resize:'none'}} />
         </div>
 
-        {/* Looking For */}
         <div style={C.sectionTitle}>🎯 Looking For</div>
         <div style={{marginBottom:'1rem'}}>
           {LOOKING_FOR.map(l=>(
@@ -174,7 +168,6 @@ export default function Welcome({ user }) {
           ))}
         </div>
 
-        {/* Interests */}
         <div style={C.sectionTitle}>🏷 Interests</div>
         <div style={{marginBottom:'1rem'}}>
           {INTERESTS.map(i=>(
@@ -182,7 +175,6 @@ export default function Welcome({ user }) {
           ))}
         </div>
 
-        {/* Vibe */}
         <label style={C.label}>Vibe</label>
         <div style={C.vibeToggle}>
           {['Traditional','Modern'].map(v=>(
@@ -192,7 +184,6 @@ export default function Welcome({ user }) {
           ))}
         </div>
 
-        {/* Photo Upload */}
         <div style={C.sectionTitle}>📸 Profile Photo</div>
         <label style={C.photoArea}>
           {photoPreview
@@ -202,7 +193,6 @@ export default function Welcome({ user }) {
           <input type="file" accept="image/*" onChange={handlePhoto} style={{display:'none'}} />
         </label>
 
-        {/* Privacy */}
         <div style={{marginTop:'1rem',paddingTop:'1rem',borderTop:'1px solid #FFD0DD'}}>
           <div style={{display:'flex',alignItems:'flex-start',gap:'0.5rem',marginBottom:'0.5rem'}}>
             <input type="checkbox" checked={privacyAgreed} onChange={e=>setPrivacyAgreed(e.target.checked)} style={{width:15,height:15,marginTop:2,accentColor:'#E86F8C'}} />
@@ -214,8 +204,8 @@ export default function Welcome({ user }) {
           {privacyOpen && (
             <div style={{background:'#FFF8FA',borderRadius:'0.75rem',padding:'0.6rem',fontSize:'0.65rem',color:'#B84C6E',marginTop:'0.5rem',lineHeight:1.6}}>
               <p><strong>🔒 What we collect:</strong> Name, bio, profile photo, interests.</p>
-              <p><strong>🚫 What we DON'T store:</strong> Your verification selfie — deleted immediately.</p>
-              <p><strong>🎯 You control your privacy.</strong> No search by phone or Telegram username.</p>
+              <p><strong>🚫 What we DON'T store:</strong> Your verification selfie.</p>
+              <p><strong>🎯 You control your privacy.</strong></p>
             </div>
           )}
         </div>
