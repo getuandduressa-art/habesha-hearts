@@ -17,7 +17,6 @@ export default function Verify({ user, setUser }) {
 
   const markVerified = async (field) => {
     if (isDemo) {
-      // Demo mode — just update local state
       if (setUser) setUser(prev => ({ ...prev, [field]: true }))
       return
     }
@@ -31,7 +30,6 @@ export default function Verify({ user, setUser }) {
     setLoading(true)
     const file = e.target.files[0]
     if (!file) { setLoading(false); return }
-
     try {
       if (!isDemo) {
         const { error: uploadError } = await supabase.storage
@@ -53,7 +51,6 @@ export default function Verify({ user, setUser }) {
     setLoading(true)
     const file = e.target.files[0]
     if (!file) { setLoading(false); return }
-
     try {
       if (!isDemo) {
         const { error: uploadError } = await supabase.storage
@@ -81,14 +78,11 @@ export default function Verify({ user, setUser }) {
     setLoading(false)
   }
 
-  // Open camera with fallback for black screen issue
-  const openCamera = (ref) => {
+  const openPicker = (ref) => {
     setCameraError('')
-    if (ref.current) {
-      // Reset input so same file can be re-selected
-      ref.current.value = ''
-      ref.current.click()
-    }
+    if (!ref.current) return
+    ref.current.value = ''
+    ref.current.click()
   }
 
   const steps = [
@@ -147,54 +141,56 @@ export default function Verify({ user, setUser }) {
 
               {step === i && (
                 <div style={{ marginTop: 12 }}>
-                  {i === 0 && <>
-                    {/* Two options: camera or file upload — avoids black screen on some devices */}
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoVerify}
-                      style={{ display: 'none' }}
-                    />
-                    <input
-                      id="photo-file-fallback"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoVerify}
-                      style={{ display: 'none' }}
-                    />
-                    <button
-                      onClick={() => openCamera(fileRef)}
-                      disabled={loading}
-                      style={{ background: '#C2566B', color: '#fff', border: 'none', borderRadius: 20, padding: '10px 20px', fontSize: 14, width: '100%', fontWeight: 500, cursor: 'pointer', marginBottom: 8 }}>
-                      {loading ? 'Uploading...' : '📷 Take Selfie (Camera)'}
-                    </button>
-                    <button
-                      onClick={() => document.getElementById('photo-file-fallback').click()}
-                      disabled={loading}
-                      style={{ background: '#FFF8FA', color: '#C2566B', border: '1px solid #C2566B', borderRadius: 20, padding: '8px 20px', fontSize: 13, width: '100%', fontWeight: 500, cursor: 'pointer' }}>
-                      🖼 Upload from Gallery instead
-                    </button>
-                  </>}
+                  {i === 0 && (
+                    <>
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/heic"
+                        onChange={handlePhotoVerify}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => openPicker(fileRef)}
+                        disabled={loading}
+                        style={{ background: '#C2566B', color: '#fff', border: 'none', borderRadius: 20, padding: '12px 20px', fontSize: 14, width: '100%', fontWeight: 600, cursor: 'pointer' }}>
+                        {loading ? '⏳ Uploading...' : '📷 Upload Selfie'}
+                      </button>
+                      <p style={{ fontSize: 11, color: '#8A6A50', textAlign: 'center', marginTop: 8 }}>
+                        Tap the button — your photo library will open
+                      </p>
+                    </>
+                  )}
 
-                  {i === 1 && <>
-                    <input ref={idRef} type="file" accept="image/*" onChange={handleIDVerify} style={{ display: 'none' }} />
-                    <button
-                      onClick={() => openCamera(idRef)}
-                      disabled={loading}
-                      style={{ background: '#185fa5', color: '#fff', border: 'none', borderRadius: 20, padding: '10px 20px', fontSize: 14, width: '100%', fontWeight: 500, cursor: 'pointer' }}>
-                      {loading ? 'Uploading...' : '🪪 Upload ID'}
-                    </button>
-                  </>}
+                  {i === 1 && (
+                    <>
+                      <input
+                        ref={idRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/heic"
+                        onChange={handleIDVerify}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => openPicker(idRef)}
+                        disabled={loading}
+                        style={{ background: '#185fa5', color: '#fff', border: 'none', borderRadius: 20, padding: '12px 20px', fontSize: 14, width: '100%', fontWeight: 600, cursor: 'pointer' }}>
+                        {loading ? '⏳ Uploading...' : '🪪 Upload ID Photo'}
+                      </button>
+                      <p style={{ fontSize: 11, color: '#8A6A50', textAlign: 'center', marginTop: 8 }}>
+                        Take a photo of your Ethiopian ID or Fayda card
+                      </p>
+                    </>
+                  )}
 
-                  {i === 2 &&
+                  {i === 2 && (
                     <button
                       onClick={handleLiveness}
                       disabled={loading}
-                      style={{ background: '#C1602A', color: '#fff', border: 'none', borderRadius: 20, padding: '10px 20px', fontSize: 14, width: '100%', fontWeight: 500, cursor: 'pointer' }}>
-                      {loading ? 'Checking...' : '🤳 Complete Liveness Check'}
+                      style={{ background: '#C1602A', color: '#fff', border: 'none', borderRadius: 20, padding: '12px 20px', fontSize: 14, width: '100%', fontWeight: 600, cursor: 'pointer' }}>
+                      {loading ? '⏳ Checking...' : '🤳 Complete Liveness Check'}
                     </button>
-                  }
+                  )}
                 </div>
               )}
             </div>
