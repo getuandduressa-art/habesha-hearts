@@ -13,7 +13,6 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get Telegram user
     const tg = window.Telegram?.WebApp
     if (tg) {
       tg.ready()
@@ -21,11 +20,19 @@ export default function App() {
     }
     const tgUser = tg?.initDataUnsafe?.user
     if (tgUser) {
-      // Auto login with Telegram user
       loginWithTelegram(tgUser)
     } else {
-      // Demo mode - create a test user
-      setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
+      // Demo mode - check localStorage for saved profile
+      const saved = localStorage.getItem('habesha_demo_profile')
+      if (saved) {
+        try {
+          setUser(JSON.parse(saved))
+        } catch {
+          setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
+        }
+      } else {
+        setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
+      }
       setLoading(false)
     }
   }, [])
@@ -46,6 +53,7 @@ export default function App() {
             telegram_id: tgUser.id,
             name: `${tgUser.first_name} ${tgUser.last_name || ''}`.trim(),
             photo_url: tgUser.photo_url || null,
+            profile_complete: false,
           })
           .select()
           .single()
@@ -55,6 +63,7 @@ export default function App() {
       }
     } catch (e) {
       console.error(e)
+      setUser({ id: 'demo-user', name: 'Demo User', telegram_id: 12345 })
     }
     setLoading(false)
   }
@@ -65,14 +74,19 @@ export default function App() {
     </div>
   )
 
+  // Check if profile is complete
+  const profileComplete = user?.profile_complete === true || 
+    (user?.age && user?.region && user?.religion)
+
   return (
     <Routes>
-      <Route path="/" element={!user?.age ? <Welcome user={user} /> : <Browse user={user} />} />
+      <Route path="/" element={!profileComplete ? <Welcome user={user} setUser={setUser} /> : <Browse user={user} />} />
       <Route path="/browse" element={<Browse user={user} />} />
       <Route path="/matches" element={<Matches user={user} />} />
       <Route path="/chat/:matchId" element={<Chat user={user} />} />
       <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
-      <Route path="/verify" element={<Verify user={user} />} />
+      <Route path="/verify" element={<Verify user={user} setUser={setUser} />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   )
 }
